@@ -1,0 +1,14 @@
+<head>
+  <title>surround-sound</title>
+</head>
+
+<body>
+  {{> hello}}
+</body>
+
+<template name="hello">
+  <h1>Hello World!</h1>
+  {{greeting}}
+  <input type="button" class="playMoo" value="Moo" />
+  <input type="range" class="volume" min="0" max="1" step="0.1" />
+</template>
