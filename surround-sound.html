@@ -3,12 +3,31 @@
 </head>
 
 <body>
-  {{> hello}}
+  {{> controlPanel}}
 </body>
 
-<template name="hello">
-  <h1>Hello World!</h1>
-  {{greeting}}
+<template name="controlPanel">
   <input type="button" class="playMoo" value="Moo" />
-  <input type="range" class="volume" min="0" max="1" step="0.1" />
+  <input type="button" class="playMooAll" value="PLay moo on all" />
+  <label>Volume:
+    <input type="range" class="volume" min="0" max="1" step="0.1" />
+  </label>
+
+  <label>Pan:
+    <input type="range" class="pan" min="0" max="100" step="2" />
+  </label>
+
+  <button class="subscribe-left">I'm a left speaker</button>
+  <button class="subscribe-right">I'm a right speaker</button>
+
+  {{#each speakers}}
+  <span>{{> speaker}}</span>
+  {{/each}}
+</template>
+
+<template name="speaker">
+  <div> 
+    <span>{{position}}</span>
+    <span>{{gain}}</span>
+  </div>
 </template>
