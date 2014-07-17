@@ -1,6 +1,42 @@
 Speakers = new Meteor.Collection('speakers')
 AudioChannels = new Meteor.Collection('audiochannels')
 
+if (Meteor.isServer) {
+  Meteor.startup(function () {
+    if (Speakers.find().count() === 0) {
+      Speakers.insert({
+        position: 'left',
+        gain: '0.5'
+      })
+      Speakers.insert({
+        position: 'right',
+        gain: '0.5'
+      })
+    }
+
+    if (AudioChannels.find().count() === 0) {
+      AudioChannels.insert({
+        name: 'moo',
+        filePath: '/audio/moo.mp3',
+        playing: false
+      })
+      AudioChannels.insert({
+        name: 'baa',
+        filePath: '/audio/baa.mp3',
+        playing: false
+      })
+    }
+  })
+
+  Meteor.publish('speakers', function () {
+    return Speakers.find()
+  })
+
+  Meteor.publish('audiochannels', function () {
+    return AudioChannels.find()
+  })
+}
+
 if (Meteor.isClient) {
 
   Template.controlPanel.speakers = function () {
@@ -41,7 +77,7 @@ if (Meteor.isClient) {
       setChannelPlaying(soundName, true)
       setTimeout(function () {
         setChannelPlaying(soundName, false)
-      }, 1)
+      }, 100)
     },
     'click .playMooAll': function () {
       
@@ -71,42 +107,6 @@ if (Meteor.isClient) {
       source.start(0)
     }
   }, false)
-}
-
-if (Meteor.isServer) {
-  Meteor.startup(function () {
-    if (Speakers.find().count() === 0) {
-      Speakers.insert({
-        position: 'left',
-        gain: '0.5'
-      })
-      Speakers.insert({
-        position: 'right',
-        gain: '0.5'
-      })
-    }
-
-    if (AudioChannels.find().count() === 0) {
-      AudioChannels.insert({
-        name: 'moo',
-        filePath: '/audio/moo.wav',
-        playing: false
-      })
-      AudioChannels.insert({
-        name: 'baa',
-        filePath: '/audio/baa.wav',
-        playing: false
-      })
-    }
-  })
-
-  Meteor.publish('speakers', function () {
-    return Speakers.find()
-  })
-
-  Meteor.publish('audiochannels', function () {
-    return AudioChannels.find()
-  })
 }
 
 function initAudioChannels () {
