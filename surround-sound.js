@@ -7,6 +7,10 @@ if (Meteor.isClient) {
     return Speakers.find()
   }
 
+  Template.controlPanel.sounds = function () {
+    return AudioChannels.find()
+  }
+
   Meteor.subscribe('speakers')
   Meteor.subscribe('audiochannels', function () {
     initAudioChannels()
@@ -32,14 +36,15 @@ if (Meteor.isClient) {
       speakerPosition = 'right'
       becomeSpeaker('right')
     },
-    'click .playMoo': function () {
-      playSound('moo') 
+    'click .play': function (e) {
+      var soundName = $(e.target).attr('data-sound')
+      setChannelPlaying(soundName, true)
+      setTimeout(function () {
+        setChannelPlaying(soundName, false)
+      }, 1)
     },
     'click .playMooAll': function () {
-      setChannelPlaying('moo', true)
-      setTimeout(function () {
-        setChannelPlaying('moo', false)
-      }, 1)
+      
     },
 
     'input .pan': function () {
@@ -60,7 +65,11 @@ if (Meteor.isClient) {
     var source = context.createBufferSource()
     source.buffer = buffer
     source.connect(context.destination)
-    source.noteOn(0)
+    if (source.noteOn) {
+      source.noteOn(0)
+    } else {
+      source.start(0)
+    }
   }, false)
 }
 
@@ -71,7 +80,6 @@ if (Meteor.isServer) {
         position: 'left',
         gain: '0.5'
       })
-
       Speakers.insert({
         position: 'right',
         gain: '0.5'
@@ -82,6 +90,11 @@ if (Meteor.isServer) {
       AudioChannels.insert({
         name: 'moo',
         filePath: '/audio/moo.wav',
+        playing: false
+      })
+      AudioChannels.insert({
+        name: 'baa',
+        filePath: '/audio/baa.wav',
         playing: false
       })
     }
@@ -134,7 +147,6 @@ function becomeSpeaker (position) {
   var speakerQuery = Speakers.find({position: position})
   speakerQuery.observeChanges({
     changed: function (id, changes) {
-      console.log(changes)
       if (changes.gain != null) gainNode.gain.value = changes.gain
     }
   })
@@ -142,9 +154,12 @@ function becomeSpeaker (position) {
   var channelQuery = AudioChannels.find()
   channelQuery.observe({
     changed: function (id, channel) {
+      console.log('playing', channel.name)
       if (channel.playing === true) playSound(channel.name)
     }
   })
+
+  $('body').removeClass().addClass(position)
 }
 
 function setSpeakerGain (position, gain) {
