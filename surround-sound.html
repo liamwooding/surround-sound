@@ -20,14 +20,14 @@
   <button class="subscribe-right">I'm a right speaker</button>
 
   <div class="left-speaker-ui">
-    <h1>L</h1>
+    <h1 class="speaker-position">Left</h1>
     {{#each speakers}}
       {{> speaker}}
     {{/each}}
   </div>
 
   <div class="right-speaker-ui">
-    <h1>R</h1>
+    <h1 class="speaker-position">Right</h1>
      {{#each speakers}}
       {{> speaker}}
     {{/each}}
@@ -35,7 +35,7 @@
 </template>
 
 <template name="speaker">
-  <div class="speaker-{{position}}"> 
+  <div class="speaker-{{position}} speaker-volume"> 
     <span>{{gain}}</span>
   </div>
 </template>

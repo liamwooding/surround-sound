@@ -1,5 +1,6 @@
 Speakers = new Meteor.Collection('speakers')
 AudioChannels = new Meteor.Collection('audiochannels')
+AudioEvents = new Meteor.Collection('audioevents')
 
 if (Meteor.isServer) {
   Meteor.startup(function () {
@@ -25,6 +26,11 @@ if (Meteor.isServer) {
         filePath: '/audio/baa.mp3',
         playing: false
       })
+      AudioChannels.insert({
+        name: 'cowbell',
+        filePath: '/audio/cowbell.mp3',
+        playing: false
+      })
     }
   })
 
@@ -34,6 +40,10 @@ if (Meteor.isServer) {
 
   Meteor.publish('audiochannels', function () {
     return AudioChannels.find()
+  })
+
+  Meteor.publish('audioevents', function () {
+    return AudioEvents.find()
   })
 }
 
@@ -51,13 +61,14 @@ if (Meteor.isClient) {
   Meteor.subscribe('audiochannels', function () {
     initAudioChannels()
   })
+  Meteor.subscribe('audioevents')
 
   window.AudioContext = window.AudioContext || window.webkitAudioContext
   var context = new AudioContext()
   var gainNode = context.createGain()
 
   var speakerPosition = null
-  var buffers = {}
+  var sounds = {}
 
   Template.controlPanel.rendered = function () {
     initAudioChannels()
@@ -74,13 +85,7 @@ if (Meteor.isClient) {
     },
     'click .play': function (e) {
       var soundName = $(e.target).attr('data-sound')
-      setChannelPlaying(soundName, true)
-      setTimeout(function () {
-        setChannelPlaying(soundName, false)
-      }, 100)
-    },
-    'click .playMooAll': function () {
-      
+      newAudioEvent(soundName)
     },
 
     'input .pan': function () {
@@ -114,7 +119,8 @@ function initAudioChannels () {
   AudioChannels.find().fetch()
   .forEach(function (channel) {
     bufferAudio(window.location.origin + channel.filePath, function (buffer) {
-      buffers[channel.name] = buffer
+      sounds[channel.name] = {}
+      sounds[channel.name].buffer = buffer
     })
   })
 }
@@ -136,11 +142,15 @@ function bufferAudio (url, cb) {
 }
 
 function playSound (name) {
+  console.log(name, sounds)
   var source = context.createBufferSource()
-  source.buffer = buffers[name]
+  source.buffer = sounds[name].buffer
   source.connect(gainNode)
   gainNode.connect(context.destination)
+
   source.start(0)
+
+  $('.speaker-position').animate({ fontSize: '200px' }).delay(1000).animate({ fontSize: '70px' })
 }
 
 function becomeSpeaker (position) {
@@ -151,11 +161,11 @@ function becomeSpeaker (position) {
     }
   })
 
-  var channelQuery = AudioChannels.find()
-  channelQuery.observe({
-    changed: function (id, channel) {
-      console.log('playing', channel.name)
-      if (channel.playing === true) playSound(channel.name)
+  var audioEventQuery = AudioEvents.find()
+  audioEventQuery.observe({
+    added: function (event) {
+      var fiveSecondsAgo = moment().subtract('seconds', 5)
+      if (moment(event.timestamp).isAfter(fiveSecondsAgo)) playSound(event.name)
     }
   })
 
@@ -170,10 +180,18 @@ function setSpeakerGain (position, gain) {
   )
 }
 
-function setChannelPlaying (name, playing) {
+function newAudioEvent (name) {
+  console.log('playing', name)
   var audioChannel = AudioChannels.findOne({name: name})
-  AudioChannels.update(
-    { _id: audioChannel._id },
-    { $set: { playing: playing } }
+  AudioEvents.insert(
+    {
+      name: name,
+      timestamp: moment().toISOString()
+    }
   )
+} 
+
+function getNextMultipleOf (number, multiple) {
+  if (number % multiple != 0) return Math.ceil(number / multiple) * multiple
+  return number
 }
