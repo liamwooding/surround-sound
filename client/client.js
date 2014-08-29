@@ -94,14 +94,21 @@ function bufferAudio (url, cb) {
   request.send();
 }
 
-function playSound (name) {
-  console.log(name, sounds)
+function playSound (audioEvent) {
+  //console.log(audioEvent)
+  var soundName = audioEvent.name
+  var time = moment(audioEvent.time)
+  var timeDifference = moment(time).diff(moment()) / 1000
+
+  if (timeDifference < 0) return
+  console.log(context.currentTime, timeDifference)
+
   var source = context.createBufferSource()
-  source.buffer = sounds[name].buffer
+  source.buffer = sounds[soundName].buffer
   source.connect(gainNode)
   gainNode.connect(context.destination)
 
-  source.start(0)
+  source.start(context.currentTime + timeDifference)
 
   $('.speaker-position').animate({ fontSize: '200px' }, 50).delay(50).animate({ fontSize: '70px' }, 50)
 }
@@ -117,8 +124,7 @@ function becomeSpeaker (position) {
   var audioEventQuery = AudioEvents.find()
   audioEventQuery.observe({
     added: function (event) {
-      var fiveSecondsAgo = moment().subtract('seconds', 1)
-      if (moment(event.timestamp).isAfter(fiveSecondsAgo)) playSound(event.name)
+      playSound(event)
     }
   })
 
@@ -136,10 +142,11 @@ function setSpeakerGain (position, gain) {
 function newAudioEvent (name) {
   console.log('playing', name)
   var audioChannel = AudioChannels.findOne({name: name})
+
   AudioEvents.insert(
     {
       name: name,
-      timestamp: moment().toISOString()
+      time: moment().add(3, 'seconds').toDate()
     }
   )
 }
